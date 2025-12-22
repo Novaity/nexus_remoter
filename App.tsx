@@ -1,9 +1,38 @@
-
 import React, { useState, useEffect } from 'react';
-import { AppState, ControlButton, ActionType, ConnectionStatus } from './types';
+import { AppState, ControlButton, ActionType, DashboardPage } from './types';
 import { COLORS, ICONS } from './constants';
 import { executor } from './services/automationService';
 import { generateMacroSteps } from './services/geminiService';
+
+const DEFAULT_PAGES: DashboardPage[] = [
+  {
+    id: 'main',
+    name: 'PC Controller',
+    buttons: [
+      {
+        id: '1',
+        label: 'YouTube Aç',
+        color: 'bg-red-600',
+        icon: 'CHROME',
+        steps: [{ id: 's1', type: ActionType.OPEN_URL, value: 'https://youtube.com', description: 'YouTube\'u aç' }]
+      },
+      {
+        id: '2',
+        label: 'Steam & CS2',
+        color: 'bg-blue-600',
+        icon: 'STEAM',
+        steps: [{ id: 's2', type: ActionType.COMMAND, value: 'steam://rungameid/730', description: 'CS2 Başlat' }]
+      },
+      {
+        id: '3',
+        label: 'Google Chrome',
+        color: 'bg-slate-700',
+        icon: 'CHROME',
+        steps: [{ id: 's3', type: ActionType.OPEN_URL, value: 'https://google.com', description: 'Google\'ı aç' }]
+      }
+    ]
+  }
+];
 
 const ButtonCard: React.FC<{
   button: ControlButton;
@@ -11,14 +40,14 @@ const ButtonCard: React.FC<{
   onPress: (btn: ControlButton) => void;
   onEdit: (btn: ControlButton) => void;
 }> = ({ button, isEditMode, onPress, onEdit }) => {
-  const Icon = ICONS[button.icon as keyof typeof ICONS] || ICONS.DEFAULT;
+  const IconComponent = (ICONS as any)[button.icon] || ICONS.DEFAULT;
 
   return (
     <button
       onClick={() => isEditMode ? onEdit(button) : onPress(button)}
       className={`relative aspect-square rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group ${button.color} shadow-lg shadow-black/30 hover:brightness-110`}
     >
-      <Icon className="w-10 h-10 text-white group-hover:scale-110 transition-transform" />
+      <IconComponent className="w-10 h-10 text-white group-hover:scale-110 transition-transform" />
       <span className="text-sm font-semibold text-white text-center leading-tight">
         {button.label}
       </span>
@@ -35,50 +64,15 @@ const ButtonCard: React.FC<{
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(() => {
-    try {
-      const savedIp = localStorage.getItem('nexus_pc_ip') || '';
-      return {
-        currentPageId: 'main',
-        isEditMode: false,
-        isExecuting: false,
-        pcIpAddress: savedIp,
-        connectionStatus: 'disconnected',
-        pages: [
-          {
-            id: 'main',
-            name: 'PC Controller',
-            buttons: [
-              {
-                id: '1',
-                label: 'YouTube Aç',
-                color: 'bg-red-600',
-                icon: 'CHROME',
-                steps: [{ id: 's1', type: ActionType.OPEN_URL, value: 'https://youtube.com', description: 'YouTube\'u aç' }]
-              },
-              {
-                id: '2',
-                label: 'Steam & CS2',
-                color: 'bg-blue-600',
-                icon: 'STEAM',
-                steps: [{ id: 's2', type: ActionType.COMMAND, value: 'steam://rungameid/730', description: 'CS2 Başlat' }]
-              },
-              {
-                id: '3',
-                label: 'Google Chrome',
-                color: 'bg-slate-700',
-                icon: 'CHROME',
-                steps: [{ id: 's3', type: ActionType.OPEN_URL, value: 'https://google.com', description: 'Google\'ı aç' }]
-              }
-            ]
-          }
-        ]
-      };
-    } catch (e) {
-      console.error("State initialization error", e);
-      return {
-        currentPageId: 'main', isEditMode: false, isExecuting: false, pcIpAddress: '', connectionStatus: 'disconnected', pages: []
-      } as any;
-    }
+    const savedIp = typeof localStorage !== 'undefined' ? localStorage.getItem('nexus_pc_ip') || '' : '';
+    return {
+      currentPageId: 'main',
+      isEditMode: false,
+      isExecuting: false,
+      pcIpAddress: savedIp,
+      connectionStatus: 'disconnected',
+      pages: DEFAULT_PAGES
+    };
   });
 
   const [editingButton, setEditingButton] = useState<ControlButton | null>(null);
@@ -126,7 +120,8 @@ const App: React.FC = () => {
         setEditingButton({ ...editingButton, steps: newSteps });
       }
     } catch (err) {
-      alert("AI Hatası: Anahtarınızın doğru olduğundan ve internetinizin çalıştığından emin olun.");
+      console.error(err);
+      alert("AI Hatası: API Anahtarınızın GitHub Secrets kısmına doğru eklendiğinden emin olun.");
     } finally {
       setIsGenerating(false);
       setAiPrompt('');
@@ -135,10 +130,8 @@ const App: React.FC = () => {
 
   const currentPage = state.pages.find(p => p.id === state.currentPageId) || state.pages[0];
 
-  if (!currentPage) return <div className="p-10 text-white">Yükleniyor...</div>;
-
   return (
-    <div className="min-h-screen max-w-md mx-auto flex flex-col bg-slate-900 border-x border-slate-800 shadow-2xl relative overflow-hidden">
+    <div className="min-h-screen max-w-md mx-auto flex flex-col bg-slate-900 border-x border-slate-800 shadow-2xl relative overflow-hidden text-white">
       {/* Header */}
       <header className="p-6 bg-slate-900/80 backdrop-blur-md sticky top-0 z-20 flex items-center justify-between border-b border-slate-800">
         <div className="flex items-center gap-3">
@@ -149,18 +142,18 @@ const App: React.FC = () => {
             </div>
           </button>
           <div>
-            <h1 className="text-lg font-bold text-white">Nexus Remote</h1>
+            <h1 className="text-lg font-bold text-white leading-tight">Nexus Remote</h1>
             <div className="flex items-center gap-1">
               <span className={`w-1.5 h-1.5 rounded-full ${state.connectionStatus === 'connected' ? 'bg-green-500' : state.connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`}></span>
-              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{state.pcIpAddress || 'Bağlantı Yok'}</span>
+              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">{state.pcIpAddress || 'BAĞLANTI YOK'}</span>
             </div>
           </div>
         </div>
         <button 
           onClick={() => setState(prev => ({ ...prev, isEditMode: !prev.isEditMode }))}
-          className={`px-4 py-2 rounded-full text-xs font-bold uppercase transition-all ${state.isEditMode ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-300'}`}
+          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all ${state.isEditMode ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700'}`}
         >
-          {state.isEditMode ? 'Bitti' : 'Düzenle'}
+          {state.isEditMode ? 'BİTTİ' : 'DÜZENLE'}
         </button>
       </header>
 
@@ -179,7 +172,7 @@ const App: React.FC = () => {
         </div>
 
         {state.isExecuting && (
-          <div className="mt-8 p-4 bg-blue-600/20 border border-blue-500/50 rounded-xl animate-pulse flex items-center gap-3">
+          <div className="mt-8 p-4 bg-blue-600/10 border border-blue-500/30 rounded-2xl flex items-center gap-3">
             <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
             <span className="text-sm font-medium text-blue-300">Komut Gönderiliyor: {state.lastExecutedAction}</span>
           </div>
@@ -188,13 +181,12 @@ const App: React.FC = () => {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/90 backdrop-blur-md overflow-y-auto">
-          <div className="bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-700 my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+          <div className="bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-700">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-white">PC Bağlantısı</h2>
               <button onClick={() => setShowSettings(false)} className="text-slate-400 p-2"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l18 18" /></svg></button>
             </div>
-            
             <div className="space-y-6">
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase block mb-2">1. PC IP ADRESİNİZ</label>
@@ -206,23 +198,7 @@ const App: React.FC = () => {
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white font-mono focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
-
-              <div className="p-4 bg-blue-600/10 border border-blue-500/30 rounded-2xl">
-                <h3 className="text-xs font-bold text-blue-400 uppercase mb-2">2. Bilgisayar Kurulumu</h3>
-                <p className="text-[11px] text-slate-300 mb-3 leading-relaxed">
-                  PC'de <code>nexus_agent.py</code> dosyasının çalıştığından emin olun.
-                </p>
-                <code className="block bg-black/50 p-2 rounded text-[10px] text-cyan-300 font-mono mb-3 truncate">
-                  pip install flask flask-cors
-                </code>
-              </div>
-
-              <button 
-                onClick={handleSaveIp}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-transform active:scale-95"
-              >
-                Kaydet ve Bağlan
-              </button>
+              <button onClick={handleSaveIp} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-transform active:scale-95">Kaydet ve Bağlan</button>
             </div>
           </div>
         </div>
@@ -236,7 +212,6 @@ const App: React.FC = () => {
               <h2 className="text-lg font-bold text-white">Butonu Düzenle</h2>
               <button onClick={() => setEditingButton(null)} className="text-slate-400 p-2"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l18 18" /></svg></button>
             </div>
-            
             <div className="space-y-4 overflow-y-auto flex-1 pr-1">
               <input 
                 type="text" 
@@ -245,13 +220,6 @@ const App: React.FC = () => {
                 onChange={e => setEditingButton({...editingButton, label: e.target.value})}
                 className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white outline-none"
               />
-
-              <div className="flex flex-wrap gap-2">
-                {COLORS.map(c => (
-                  <button key={c} onClick={() => setEditingButton({...editingButton, color: c})} className={`w-8 h-8 rounded-full ${c} ${editingButton.color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-800' : ''}`} />
-                ))}
-              </div>
-
               <div className="pt-4 border-t border-slate-700">
                 <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Yapay Zeka (Gemini)</label>
                 <div className="flex gap-2">
@@ -262,12 +230,11 @@ const App: React.FC = () => {
                     onChange={e => setAiPrompt(e.target.value)}
                     className="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none"
                   />
-                  <button onClick={handleAiGenerate} disabled={isGenerating} className="bg-blue-600 p-3 rounded-xl disabled:opacity-50">
+                  <button onClick={handleAiGenerate} disabled={isGenerating} className="bg-blue-600 p-3 rounded-xl disabled:opacity-50 min-w-[50px] flex items-center justify-center">
                     {isGenerating ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
                   </button>
                 </div>
               </div>
-
               <div className="space-y-2 mt-4">
                 {editingButton.steps.map((step, idx) => (
                   <div key={step.id} className="bg-slate-900/50 p-3 rounded-xl border border-slate-700 flex items-center justify-between">
@@ -279,7 +246,6 @@ const App: React.FC = () => {
                 ))}
               </div>
             </div>
-
             <button 
               onClick={() => {
                 setState(prev => ({
