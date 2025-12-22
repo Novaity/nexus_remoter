@@ -1,0 +1,8 @@
+
+{
+  "name": "Nexus Remote Controller",
+  "description": "A highly extensible automation dashboard designed for cross-platform control. Define custom macros using AI to launch apps, open URLs, and automate PC workflows directly from your phone.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
