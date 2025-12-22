@@ -1,20 +1,39 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
 
-# Run and deploy your AI Studio app
+# 🚀 Nexus Remote Controller
 
-This contains everything you need to run your app locally.
+Bu uygulama, telefonunuzu bir uzaktan kumandaya dönüştürerek bilgisayarınızı kontrol etmenizi sağlar. Gemini AI desteği ile özel komutlar (makrolar) oluşturabilirsiniz.
 
-View your app in AI Studio: https://ai.studio/apps/temp/1
+## 🛠️ Kurulum Adımları
 
-## Run Locally
+### 1. Telefon Uygulaması (Frontend)
+1. GitHub'da bu repoyu oluşturun.
+2. `Settings > Secrets and variables > Actions` kısmına gidin.
+3. `New repository secret` butonuna basın:
+   - Name: `API_KEY`
+   - Value: (Gemini API anahtarınız)
+4. Kodunuzu `main` branchine pushladığınızda uygulama otomatik olarak yayınlanacaktır.
+5. `Settings > Pages` kısmından linkinizi görebilirsiniz.
 
-**Prerequisites:**  Node.js
+### 2. Bilgisayar Ajanı (PC Agent)
+Bilgisayarınızda komutları çalıştıracak olan Python sunucusunu kurun:
 
+1. `nexus_agent.py` dosyasını indirin.
+2. Gerekli kütüphaneleri yükleyin:
+   ```bash
+   pip install flask flask-cors
+   ```
+3. Sunucuyu başlatın:
+   ```bash
+   python nexus_agent.py
+   ```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 📱 Kullanım
+- Uygulamayı telefonunuzda açın ve "Ana Ekrana Ekle" diyerek yükleyin.
+- Ayarlar ikonuna tıklayarak bilgisayarınızın Yerel IP adresini girin.
+- Sol üstteki bağlantı ışığı yeşil yandığında hazırsınız!
+
+## 🤖 AI Özellikleri
+Düzenleme modunda bir butona tıklayıp AI kısmına şu tarz komutlar yazabilirsiniz:
+- "Chrome'u aç ve netflix.com'a git"
+- "Steam'i başlat ve kütüphaneyi aç"
+- "Bilgisayarı 1 saat sonra kapat"
