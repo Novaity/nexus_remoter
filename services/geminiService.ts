@@ -7,9 +7,8 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 export const generateMacroSteps = async (prompt: string): Promise<AutomationStep[]> => {
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Translate the following automation request into a sequence of computer automation steps. Use common app identifiers (e.g., 'chrome', 'steam', 'spotify').
-    
-    Request: ${prompt}`,
+    contents: `Bir bilgisayar otomasyon sistemi için şu isteği teknik adımlara dönüştür: "${prompt}". 
+    Uygulama isimleri (chrome, steam, spotify, code) ve URL'ler kullan.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -21,10 +20,10 @@ export const generateMacroSteps = async (prompt: string): Promise<AutomationStep
             type: { 
               type: Type.STRING, 
               enum: Object.values(ActionType),
-              description: "The type of action to perform" 
+              description: "Eylem tipi" 
             },
-            value: { type: Type.STRING, description: "The parameter for the action (URL, Path, Command)" },
-            description: { type: Type.STRING, description: "A human readable explanation of this step" }
+            value: { type: Type.STRING, description: "Eylem parametresi (URL, Path, Key)" },
+            description: { type: Type.STRING, description: "Açıklama" }
           },
           required: ["id", "type", "value", "description"]
         }
@@ -33,10 +32,9 @@ export const generateMacroSteps = async (prompt: string): Promise<AutomationStep
   });
 
   try {
-    const steps = JSON.parse(response.text);
-    return steps;
+    return JSON.parse(response.text);
   } catch (e) {
-    console.error("Failed to parse AI response", e);
+    console.error("AI parsing error", e);
     return [];
   }
 };

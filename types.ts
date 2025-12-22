@@ -4,7 +4,8 @@ export enum ActionType {
   OPEN_URL = 'OPEN_URL',
   COMMAND = 'COMMAND',
   MACRO = 'MACRO',
-  SEQUENCE = 'SEQUENCE'
+  KEY_COMBINATION = 'KEY_COMBINATION',
+  MOTION_REPLAY = 'MOTION_REPLAY'
 }
 
 export interface AutomationStep {
@@ -35,7 +36,6 @@ export interface AppState {
   pages: DashboardPage[];
   isEditMode: boolean;
   isExecuting: boolean;
-  lastExecutedAction?: string;
   pcIpAddress: string;
   connectionStatus: ConnectionStatus;
 }
