@@ -130,6 +130,8 @@ const App: React.FC = () => {
 
   const currentPage = state.pages.find(p => p.id === state.currentPageId) || state.pages[0];
 
+  if (!currentPage) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Yükleniyor...</div>;
+
   return (
     <div className="min-h-screen max-w-md mx-auto flex flex-col bg-slate-900 border-x border-slate-800 shadow-2xl relative overflow-hidden text-white">
       {/* Header */}
