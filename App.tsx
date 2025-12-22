@@ -5,8 +5,6 @@ import { COLORS, ICONS } from './constants';
 import { executor } from './services/automationService';
 import { generateMacroSteps } from './services/geminiService';
 
-// --- Sub-components ---
-
 const ButtonCard: React.FC<{
   button: ControlButton;
   isEditMode: boolean;
@@ -37,43 +35,50 @@ const ButtonCard: React.FC<{
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>(() => {
-    const savedIp = localStorage.getItem('nexus_pc_ip') || '';
-    return {
-      currentPageId: 'main',
-      isEditMode: false,
-      isExecuting: false,
-      pcIpAddress: savedIp,
-      connectionStatus: 'disconnected',
-      pages: [
-        {
-          id: 'main',
-          name: 'PC Controller',
-          buttons: [
-            {
-              id: '1',
-              label: 'YouTube Aç',
-              color: 'bg-red-600',
-              icon: 'CHROME',
-              steps: [{ id: 's1', type: ActionType.OPEN_URL, value: 'https://youtube.com', description: 'YouTube\'u aç' }]
-            },
-            {
-              id: '2',
-              label: 'Steam & CS2',
-              color: 'bg-blue-600',
-              icon: 'STEAM',
-              steps: [{ id: 's2', type: ActionType.COMMAND, value: 'steam://rungameid/730', description: 'CS2 Başlat' }]
-            },
-            {
-              id: '3',
-              label: 'Google Chrome',
-              color: 'bg-slate-700',
-              icon: 'CHROME',
-              steps: [{ id: 's3', type: ActionType.OPEN_URL, value: 'https://google.com', description: 'Google\'ı aç' }]
-            }
-          ]
-        }
-      ]
-    };
+    try {
+      const savedIp = localStorage.getItem('nexus_pc_ip') || '';
+      return {
+        currentPageId: 'main',
+        isEditMode: false,
+        isExecuting: false,
+        pcIpAddress: savedIp,
+        connectionStatus: 'disconnected',
+        pages: [
+          {
+            id: 'main',
+            name: 'PC Controller',
+            buttons: [
+              {
+                id: '1',
+                label: 'YouTube Aç',
+                color: 'bg-red-600',
+                icon: 'CHROME',
+                steps: [{ id: 's1', type: ActionType.OPEN_URL, value: 'https://youtube.com', description: 'YouTube\'u aç' }]
+              },
+              {
+                id: '2',
+                label: 'Steam & CS2',
+                color: 'bg-blue-600',
+                icon: 'STEAM',
+                steps: [{ id: 's2', type: ActionType.COMMAND, value: 'steam://rungameid/730', description: 'CS2 Başlat' }]
+              },
+              {
+                id: '3',
+                label: 'Google Chrome',
+                color: 'bg-slate-700',
+                icon: 'CHROME',
+                steps: [{ id: 's3', type: ActionType.OPEN_URL, value: 'https://google.com', description: 'Google\'ı aç' }]
+              }
+            ]
+          }
+        ]
+      };
+    } catch (e) {
+      console.error("State initialization error", e);
+      return {
+        currentPageId: 'main', isEditMode: false, isExecuting: false, pcIpAddress: '', connectionStatus: 'disconnected', pages: []
+      } as any;
+    }
   });
 
   const [editingButton, setEditingButton] = useState<ControlButton | null>(null);
@@ -90,8 +95,12 @@ const App: React.FC = () => {
 
   const checkConnection = async (ip: string) => {
     setState(prev => ({ ...prev, connectionStatus: 'connecting' }));
-    const ok = await executor.testConnection(ip);
-    setState(prev => ({ ...prev, connectionStatus: ok ? 'connected' : 'disconnected' }));
+    try {
+      const ok = await executor.testConnection(ip);
+      setState(prev => ({ ...prev, connectionStatus: ok ? 'connected' : 'disconnected' }));
+    } catch (e) {
+      setState(prev => ({ ...prev, connectionStatus: 'disconnected' }));
+    }
   };
 
   const handleSaveIp = () => {
@@ -116,6 +125,8 @@ const App: React.FC = () => {
       if (editingButton) {
         setEditingButton({ ...editingButton, steps: newSteps });
       }
+    } catch (err) {
+      alert("AI Hatası: Anahtarınızın doğru olduğundan ve internetinizin çalıştığından emin olun.");
     } finally {
       setIsGenerating(false);
       setAiPrompt('');
@@ -123,6 +134,8 @@ const App: React.FC = () => {
   };
 
   const currentPage = state.pages.find(p => p.id === state.currentPageId) || state.pages[0];
+
+  if (!currentPage) return <div className="p-10 text-white">Yükleniyor...</div>;
 
   return (
     <div className="min-h-screen max-w-md mx-auto flex flex-col bg-slate-900 border-x border-slate-800 shadow-2xl relative overflow-hidden">
@@ -152,7 +165,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Grid */}
-      <main className="flex-1 p-6 z-10">
+      <main className="flex-1 p-6 z-10 overflow-y-auto">
         <div className="grid grid-cols-2 gap-4">
           {currentPage.buttons.map(btn => (
             <ButtonCard 
@@ -173,7 +186,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Settings & Guide Modal */}
+      {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/90 backdrop-blur-md overflow-y-auto">
           <div className="bg-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-700 my-auto">
@@ -197,14 +210,11 @@ const App: React.FC = () => {
               <div className="p-4 bg-blue-600/10 border border-blue-500/30 rounded-2xl">
                 <h3 className="text-xs font-bold text-blue-400 uppercase mb-2">2. Bilgisayar Kurulumu</h3>
                 <p className="text-[11px] text-slate-300 mb-3 leading-relaxed">
-                  Komutları alabilmek için bilgisayarınızda Python yüklü olmalı ve şu komutu terminalde çalıştırmalısınız:
+                  PC'de <code>nexus_agent.py</code> dosyasının çalıştığından emin olun.
                 </p>
-                <code className="block bg-black/50 p-2 rounded text-[10px] text-cyan-300 font-mono mb-3">
+                <code className="block bg-black/50 p-2 rounded text-[10px] text-cyan-300 font-mono mb-3 truncate">
                   pip install flask flask-cors
                 </code>
-                <p className="text-[11px] text-slate-300">
-                  Ardından "Nexus Agent" Python scriptini başlatın.
-                </p>
               </div>
 
               <button 
